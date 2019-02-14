@@ -6,6 +6,7 @@
   It then navigates to the random goals using the ROS navigation stack.
 
 """
+import numpy as np
 import rospy
 import map_utils
 
@@ -30,7 +31,7 @@ class RandomNavNode(object):
         # REPEAT THE FOLLOWING UNTIL ROSPY IS SHUT DOWN:
         #
         #    GENERATE A RANDOM GOAL LOCATION:
-        #       *GENERATE RANDOM LOCATIONS WHERE X AND Y ARE BOTH
+        #       *GENERATE RANDOM REAL-VALUED LOCATIONS WHERE X AND Y ARE BOTH
         #        IN THE RANGE [-10, 10].
         #       *CONTINUE GENERATING RANDOM GOAL LOCATIONS UNTIL ONE IS
         #        AT A FREE LOCATION IN THE MAP (see demo_map below)
@@ -46,8 +47,10 @@ class RandomNavNode(object):
 
         if self.map.get_cell(x_pos, y_pos) == 0:
             message = "clear"
-        elif self.map.get_cell(x_pos, y_pos) < .5:
+        elif self.map.get_cell(x_pos, y_pos) == -1:
             message = "unknown"
+        elif np.isnan(self.map.get_cell(x_pos, y_pos)):
+            message = "unknown (out of bounds)"
         else:
             message = "occupied"
 

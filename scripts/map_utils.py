@@ -1,20 +1,22 @@
 #!/usr/bin/env python
 """ 
-Map classes that can generate and read OccupancyGrid messages.
+Map class that can generate and read OccupancyGrid messages.
 
 
 Author: Nathan Sprague
-Version: 10/19/17
+Version: 2/14/19
 """
 
-import rospy
-from nav_msgs.msg import OccupancyGrid, MapMetaData
-from geometry_msgs.msg import Pose, PointStamped, Quaternion, Point
-
 import numpy as np
+import rospy
+from nav_msgs.msg import OccupancyGrid
+from geometry_msgs.msg import Pose, Quaternion, Point
+
 
 class Map(object):
     """ The Map class represents an occupancy grid.
+
+    Map entries are stored as 8-bit integers.
 
     Public instance variables:
 
@@ -91,17 +93,14 @@ class Map(object):
         list suitable for use as the data field in an OccupancyGrid
         message.
         """
-        flat_grid = self.grid.reshape((self.grid.size,)) * 100
-        data = list(np.array(np.round(flat_grid), dtype='int8'))
-        return data
+        return list(self.grid.reshape((self.grid.size,)))
 
     def _data_to_numpy(self, data):
         """
         Convert the integer data field in an OccupancyGrid message to
-        2d real valued numpy array.
+        a numpy array.
         """
-        np_data = np.array(data).reshape(self.height, self.width)
-        return np_data / 100.0
+        return np.array(data, dtype='int8').reshape(self.height, self.width)
 
     def to_message(self):
         """ Return a nav_msgs/OccupancyGrid representation of this map. """
@@ -124,7 +123,7 @@ class Map(object):
         y = col * self.resolution + .5 * self.resolution + self.origin_y
         return x, y
 
-    def _cell_index(self, x, y):
+    def cell_index(self, x, y):
         """
         Helper method for finding map index.  x and y are in the map
         coordinate system.
@@ -138,9 +137,10 @@ class Map(object):
     def set_cell(self, x, y, val):
         """
         Set the value in the grid cell containing position (x,y).
-        x and y are in the map coordinate system
+        x and y are in the map coordinate system.  No effect if (x,y) 
+        is out of bounds.
         """
-        row, col = self._cell_index(x, y)
+        row, col = self.cell_index(x, y)
         try:
             if row >= 0 and col >= 0:
                 self.grid[row, col] = val
@@ -150,9 +150,10 @@ class Map(object):
     def get_cell(self, x, y):
         """
         Get the value from the grid cell containing position (x,y).
-        x and y are in the map coordinate system
+        x and y are in the map coordinate system.  Return 'nan' if
+        (x,y) is out of bounds.
         """
-        row, col = self._cell_index(x, y)
+        row, col = self.cell_index(x, y)
         try:
             if row >= 0 and col >= 0:
                 return self.grid[row, col]
